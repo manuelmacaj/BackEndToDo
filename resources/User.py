@@ -6,9 +6,9 @@ from db import db
 from models import UserModel, ToDoModel
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from schemas import LoginUserSchema, PlainUserRegisterSchema, ToDoSchema
+from schemas import LoginUserSchema, PlainUserRegisterSchema, ToDoSchema, ToDoUpdateSchema
 
-blp = Blueprint("User", "user", description="User management")
+blp = Blueprint("User", "user", description="User API function")
 
 
 @blp.route("/sign-up/")
@@ -49,8 +49,8 @@ class UserLogin(MethodView):
 
 @blp.route("/user/<int:user_id>/")
 class User(MethodView):
-
-    @blp.response(200, PlainUserRegisterSchema)
+    @blp.response(200, PlainUserRegisterSchema, description="Return the user from DB.")
+    @blp.alt_response(404, description="User not found into the database.")
     def get(self, user_id):  # GET Method: Informazioni utente
         user = UserModel.query.get_or_404(user_id)
         if user:
@@ -62,6 +62,7 @@ class User(MethodView):
 class UserToDo(MethodView):
     @jwt_required()
     @blp.response(200, ToDoSchema(many=True), description="Return all To-Do created from user.")
+    @blp.alt_response(403, description="Error if someone try to enter in forbidden section.")
     def get(self, user_id):
         jwt_user_id = get_jwt_identity()
         if user_id != jwt_user_id:
@@ -84,10 +85,46 @@ class UserToDo(MethodView):
 @blp.route("/user/<int:user_id>/todo/<int:todo_id>/")
 class UserToDoDetail(MethodView):
     @jwt_required()
-    @blp.response(200, ToDoSchema, description="Restituisce il To-Do richiesto dall'utente")
+    @blp.response(200, ToDoSchema, description="Return the specific To-Do.")
+    @blp.alt_response(403, description="Error if someone try to enter in forbidden section.")
     def get(self, user_id, todo_id):
         jwt_user_id = get_jwt_identity()
         if user_id != jwt_user_id:
             abort(403, message="You can't enter in this section.")
+
         todo = ToDoModel.query.get_or_404(todo_id)
         return todo
+
+    @jwt_required()
+    @blp.arguments(ToDoUpdateSchema)
+    def patch(self, todo_receive_updated, **args):  # PATCH method, aggiorno il To-Do
+        jwt_user_id = get_jwt_identity()
+        if args.get("user_id") != jwt_user_id:
+            abort(403, message="You can't enter in this section.")
+
+        todo: ToDoModel = ToDoModel.query.get_or_404(args.get("todo_id"))  # ricerco
+        # verifico e modifico
+        if "todo_text" in todo_receive_updated:
+            todo.todo_text = todo_receive_updated["todo_text"]
+        if "fatto" in todo_receive_updated:
+            todo.fatto = todo_receive_updated["fatto"]
+
+        # Salvo modifiche
+        db.session.add(todo)
+        db.session.commit()
+        return {"message": "ToDo Updated."}
+
+    @jwt_required()
+    @blp.response(200, description="To-Do deleted")
+    @blp.alt_response(403, description="Forbidden function")
+    @blp.alt_response(404, description="To-Do not found")
+    def delete(self, user_id, todo_id):
+        jwt_user_id = get_jwt_identity()
+        if user_id != jwt_user_id:
+            abort(403, message="You can't enter in this section.")
+
+        todo: ToDoModel = ToDoModel.query.get_or_404(todo_id)  # ricerco
+        # cancello
+        db.session.delete(todo)
+        db.session.commit()
+        return {"message": "ToDo deleted."}

@@ -38,7 +38,12 @@ def create_app(db_url=None):
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
         return (
-            jsonify({"message": "Il token è scaduto.", "error": "token_expired"}),
+            jsonify(
+                {
+                    "message": "The token has expired.",
+                    "error": "token_expired"
+                }
+            ),
             401,
         )
 
@@ -46,7 +51,10 @@ def create_app(db_url=None):
     def invalid_token_callback(error):
         return (
             jsonify(
-                {"message": "Verifica firma fallita.", "error": "invalid_token"}
+                {
+                    "message": "Signature verification error.",
+                    "error": "invalid_token"
+                }
             ),
             401,
         )
@@ -56,7 +64,7 @@ def create_app(db_url=None):
         return (
             jsonify(
                 {
-                    "description": "La richiesta non contiene un access token.",
+                    "description": "Request doesn't contain a JWT token.",
                     "error": "authorization_required",
                 }
             ),

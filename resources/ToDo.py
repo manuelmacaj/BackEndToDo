@@ -37,7 +37,7 @@ class ToDo(MethodView):
         todo = ToDoModel.query.get_or_404(todo_id)
         return todo
 
-    @blp.response(200, description="Effettua un'ipotetica modifica di un To-Do selezionato. PATCH method!",
+    @blp.response(200, description="Modify a To-Do. PATCH method!",
                   example={"todo_text": "prova modifica", "fatto": True})
     @blp.arguments(ToDoUpdateSchema)
     def patch(self, todo_receive_updated, todo_id):  # PATCH method, aggiorno
