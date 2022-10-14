@@ -1,11 +1,11 @@
 from flask_smorest import Blueprint, abort
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
+from passlib.hash import pbkdf2_sha256
 
 from db import db
 from models import UserModel, ToDoModel
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-
 from schemas import LoginUserSchema, PlainUserRegisterSchema, ToDoSchema, ToDoUpdateSchema
 
 blp = Blueprint("User", "user", description="User API function")
@@ -17,6 +17,8 @@ class UserRegister(MethodView):
     @blp.arguments(PlainUserRegisterSchema)
     def post(self, user_data):  # POST method: registrazione utente
         user = UserModel(**user_data)
+        pwd = pbkdf2_sha256.hash(user.password)
+        user.password = pwd
         try:
             db.session.add(user)
             db.session.commit()
@@ -40,7 +42,7 @@ class UserLogin(MethodView):
             UserModel.email == user_login["email"]
         ).first()
 
-        if user and (user.password == user_login["password"]):
+        if user and (user.password == pbkdf2_sha256.hash(user_login["password"])):
             access_token = create_access_token(identity=user.id)
             return {"access_token": access_token,
                     "id": user.id}, 200

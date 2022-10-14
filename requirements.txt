@@ -8,3 +8,4 @@ flask-jwt-extended
 flask-cors
 flask-socketio
 gunicorn
+passlib

@@ -5,7 +5,6 @@ from flask_smorest import Api
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_socketio import SocketIO
-
 from db import db
 from models import ToDoModel
 
