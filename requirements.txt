@@ -3,7 +3,8 @@ flask-smorest
 python-dotenv
 marshmallow
 sqlalchemy
-flask-sqlalchemy
+flask-sqlalchemy==3.0.2
 flask-jwt-extended
 flask-cors
 flask-socketio
+gunicorn
