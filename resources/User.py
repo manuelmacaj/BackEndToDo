@@ -17,8 +17,8 @@ class UserRegister(MethodView):
     @blp.arguments(PlainUserRegisterSchema)
     def post(self, user_data):  # POST method: registrazione utente
         user = UserModel(**user_data)
-        pwd = pbkdf2_sha256.hash(user.password)
-        user.password = pwd
+        # pwd = pbkdf2_sha256.hash(user.password)
+        user.password = pbkdf2_sha256.hash(user.password)
         try:
             db.session.add(user)
             db.session.commit()
@@ -42,7 +42,7 @@ class UserLogin(MethodView):
             UserModel.email == user_login["email"]
         ).first()
 
-        if user and (user.password == pbkdf2_sha256.hash(user_login["password"])):
+        if user and pbkdf2_sha256.verify(user_login["password"], user.password):
             access_token = create_access_token(identity=user.id)
             return {"access_token": access_token,
                     "id": user.id}, 200
