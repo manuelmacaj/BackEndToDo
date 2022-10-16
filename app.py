@@ -74,7 +74,7 @@ def create_app(db_url=None):
     def create_table():
         db.create_all()
 
-    api.register_blueprint(ToDoBlueprint)
+    # api.register_blueprint(ToDoBlueprint)
     api.register_blueprint(UserBlueprint)
 
     return app

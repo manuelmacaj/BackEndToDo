@@ -1,10 +1,10 @@
 from flask_smorest import Blueprint, abort
 from flask.views import MethodView
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from db import db
 from models import ToDoModel
-from schemas import PlainToDoSchema, ToDoUpdateSchema
+from schemas import PlainToDoSchema, ToDoUpdateSchema, ToDoSchema
 from sqlalchemy.exc import SQLAlchemyError
 
 blp = Blueprint("ToDos", "todos", description="Endpoints sui To-Do")
@@ -12,15 +12,16 @@ blp = Blueprint("ToDos", "todos", description="Endpoints sui To-Do")
 
 @blp.route("/todo/")
 class ToDoList(MethodView):
-
+    @jwt_required()
     @blp.response(200, PlainToDoSchema(many=True))
     def get(self):  # GET method: return tutti i To-Do
-        return ToDoModel.query.all()
+        return ToDoModel.query.filter(ToDoModel.user_id == get_jwt_identity())
 
+    @jwt_required()
     @blp.response(201, description="Inserimento di un todo nel DB", example={"message": "Todo inserted"})
-    @blp.arguments(PlainToDoSchema)
+    @blp.arguments(ToDoSchema)
     def post(self, todo_receive):  # POST method: salvataggio nel DB
-        todo = ToDoModel(**todo_receive)
+        todo = ToDoModel(**todo_receive, user_id=get_jwt_identity())
         try:
             db.session.add(todo)
             db.session.commit()
