@@ -2,10 +2,12 @@ flask
 flask-smorest
 python-dotenv
 marshmallow
-sqlalchemy
+sqlalchemy==1.4.42
 flask-sqlalchemy==3.0.2
 flask-jwt-extended
 flask-cors
 flask-socketio
+flask-migrate
+psycopg2-binary
 gunicorn
 passlib

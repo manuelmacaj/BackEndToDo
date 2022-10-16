@@ -1,11 +1,13 @@
 import os
 
 from flask import Flask, jsonify
+from flask_migrate import Migrate
 from flask_smorest import Api
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from db import db
+from dotenv import load_dotenv
 from models import ToDoModel
 
 from resources.ToDo import blp as ToDoBlueprint
@@ -14,6 +16,7 @@ from resources.User import blp as UserBlueprint
 
 def create_app(db_url=None):
     app = Flask(__name__)
+    load_dotenv()
 
     app.config['PROPAGATE_EXCEPTION'] = True
     app.config["API_TITLE"] = "ToDoApp REST API"
@@ -32,6 +35,7 @@ def create_app(db_url=None):
     cors.init_app(app)
     api = Api(app)
     db.init_app(app)
+    migrate = Migrate(app, db)
     jwt = JWTManager(app)
 
     @jwt.expired_token_loader
