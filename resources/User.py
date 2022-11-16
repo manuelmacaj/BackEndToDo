@@ -1,6 +1,6 @@
 from flask_smorest import Blueprint, abort
 from flask.views import MethodView
-from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import jwt_required, create_access_token, create_refresh_token, get_jwt_identity
 from passlib.hash import pbkdf2_sha256
 
 from db import db
@@ -13,7 +13,6 @@ blp = Blueprint("User", "user", description="User API function")
 
 @blp.route("/sign-up/")
 class UserRegister(MethodView):
-
     @blp.arguments(PlainUserRegisterSchema)
     def post(self, user_data):  # POST method: registrazione utente
         user = UserModel(**user_data)
@@ -42,8 +41,10 @@ class UserLogin(MethodView):
         ).first()
 
         if user and pbkdf2_sha256.verify(user_login["password"], user.password):
-            access_token = create_access_token(identity=user.id)
+            access_token = create_access_token(identity=user.id, fresh=True)
+            refresh_token = create_refresh_token(user.id)
             return {"access_token": access_token,
+                    "refresh_token": refresh_token,
                     "id": user.id}, 200
         abort(401, message="Invalid credentials. Please try again")
 
@@ -61,7 +62,7 @@ class User(MethodView):
 
 @blp.route("/user/<int:user_id>/todo/")
 class UserToDo(MethodView):
-    @jwt_required()
+    @jwt_required(fresh=True)
     @blp.response(200, ToDoSchema(many=True), description="Return all To-Do created from user.")
     @blp.alt_response(403, description="Error if someone try to enter in forbidden section.")
     def get(self, user_id):
@@ -81,6 +82,15 @@ class UserToDo(MethodView):
         except SQLAlchemyError:
             abort(500, message="Internal server error.")
         return {"message": "Todo inserted correctly."}, 201
+
+
+@blp.route("/refresh")
+class TokenRefresh(MethodView):
+    @jwt_required(refresh=True)
+    def post(self):
+        current_user = get_jwt_identity()
+        new_access_token = create_access_token(identity=current_user, fresh=False)
+        return {"access_token": new_access_token}, 200
 
 
 @blp.route("/user/<int:user_id>/todo/<int:todo_id>/")
