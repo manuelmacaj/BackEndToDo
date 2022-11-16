@@ -88,13 +88,14 @@ class UserToDoDetail(MethodView):
     @jwt_required()
     @blp.response(200, ToDoSchema, description="Return the specific To-Do.")
     @blp.alt_response(403, description="Error if someone try to enter in forbidden section.")
+    @blp.alt_response(404, description="Error if the server can't find the ToDo")
     def get(self, user_id, todo_id):
-        jwt_user_id = get_jwt_identity()
-        if user_id != jwt_user_id:
-            abort(403, message="You can't enter in this section.")
-
-        todo = ToDoModel.query.get_or_404(todo_id)
-        return todo
+        todo = ToDoModel.query.get(todo_id)
+        if todo:
+            if todo.user_id != user_id:
+                abort(403, message="You can't enter in this section.")
+            return todo
+        abort(404, message="To Do not found")
 
     @jwt_required()
     @blp.arguments(ToDoUpdateSchema)
